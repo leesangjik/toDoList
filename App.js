@@ -26,10 +26,18 @@ export default function App() {
   const travel = () => setWorking(false);
 
   const edit = async (key) => {
-    const newToDos = { ...toDos };
-    newToDos[key].edit = true;
-    setToDos(newToDos);
-    await saveToDos(newToDos);
+    try {
+      const newToDos = { ...toDos };
+      if (newToDos[key].edit == false) {
+        newToDos[key].edit = true;
+      } else if (newToDos[key].edit == true) {
+        newToDos[key].edit = false;
+      }
+      setToDos(newToDos);
+      await saveToDos(newToDos);
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   const onChangeText = (payload) => setText(payload);
@@ -71,19 +79,27 @@ export default function App() {
   };
 
   const deleteToDo = (key) => {
-    Alert.alert("Delete to do", "Are you sure?", [
-      { text: "Cancel" },
-      {
-        text: "Delete",
-        onPress: async () => {
-          const newToDos = { ...toDos };
-          delete newToDos[key];
-          setToDos(newToDos);
-          await saveToDos(newToDos);
-        },
-      },
-    ]);
-    return;
+    try {
+      const newToDos = { ...toDos };
+      Alert.alert(
+        newToDos[key].working ? "Delete to do" : "Delete travel",
+        "Are you sure?",
+        [
+          { text: "Cancel" },
+          {
+            text: "Delete",
+            onPress: async () => {
+              const newToDos = { ...toDos };
+              delete newToDos[key];
+              setToDos(newToDos);
+              await saveToDos(newToDos);
+            },
+          },
+        ]
+      );
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   const saveWorkingMode = async () => {
@@ -93,7 +109,6 @@ export default function App() {
           Mode: working,
         };
         await AsyncStorage.setItem(HEADER_KEY, JSON.stringify(workingMode));
-        //console.log(`Save working mode : ${working}`);
       }
     } catch (error) {
       console.log(error);
@@ -123,47 +138,67 @@ export default function App() {
   }, []);
 
   const completeToDo = (key) => {
-    const newToDos = { ...toDos };
-    if (newToDos[key].state == false) {
-      Alert.alert("MENTION", "Are you done?", [
-        { text: "No" },
-        {
-          text: "Yes",
-          onPress: async () => {
-            const newToDos = { ...toDos };
-            newToDos[key].state = true;
-            setToDos(newToDos);
-            await saveToDos(newToDos);
-          },
-        },
-      ]);
-    } else {
-      Alert.alert("MENTION", "Do you want to cancel the completed task?", [
-        { text: "No" },
-        {
-          text: "Yes",
-          onPress: async () => {
-            const newToDos = { ...toDos };
-            newToDos[key].state = false;
-            setToDos(newToDos);
-            await saveToDos(newToDos);
-          },
-        },
-      ]);
+    try {
+      const newToDos = { ...toDos };
+      if (newToDos[key].state == false) {
+        Alert.alert(
+          "MENTION",
+          newToDos[key].working
+            ? "Are you done?"
+            : "Shall I treat it as where I've been?",
+          [
+            { text: "No" },
+            {
+              text: "Yes",
+              onPress: async () => {
+                const newToDos = { ...toDos };
+                newToDos[key].state = true;
+                setToDos(newToDos);
+                await saveToDos(newToDos);
+              },
+            },
+          ]
+        );
+      } else {
+        Alert.alert(
+          "MENTION",
+          newToDos[key].working
+            ? "Do you want to cancel the completed task?"
+            : "Should I treat it as a place I haven't been ?",
+          [
+            { text: "No" },
+            {
+              text: "Yes",
+              onPress: async () => {
+                const newToDos = { ...toDos };
+                newToDos[key].state = false;
+                setToDos(newToDos);
+                await saveToDos(newToDos);
+              },
+            },
+          ]
+        );
+      }
+    } catch (error) {
+      console.log(error);
     }
   };
 
   const editToDo = async (key) => {
     try {
       if (editText === "") {
-        return;
+        const newToDos = { ...toDos };
+        newToDos[key].edit = false;
+        setToDos(newToDos);
+        await saveToDos(newToDos);
+      } else {
+        const newToDos = { ...toDos };
+        newToDos[key].text = editText;
+        setToDos(newToDos);
+        setEditText("");
+        newToDos[key].edit = false;
+        await saveToDos(newToDos);
       }
-      const newToDos = { ...toDos };
-      newToDos[key].text = editText;
-      setToDos(newToDos);
-      setEditText("");
-      newToDos[key].edit = false;
-      await saveToDos(newToDos);
     } catch (error) {
       console.log(error);
     }
@@ -262,7 +297,7 @@ export default function App() {
                       </TouchableOpacity>
                     </View>
                   </View>
-                  {toDos[key].edit ? (
+                  {toDos[key].edit == true ? (
                     <TextInput
                       onSubmitEditing={async () => {
                         editToDo(key);
@@ -305,14 +340,15 @@ const styles = StyleSheet.create({
     marginVertical: 20,
     fontSize: 15,
   },
+
   editInput: {
     backgroundColor: theme.editInput,
     paddingVertical: 8,
     paddingHorizontal: 20,
     borderRadius: 20,
     fontSize: 15,
-    width: "60%",
     position: "absolute",
+    width: "60%",
   },
   toDo: {
     backgroundColor: theme.toDoBg,
