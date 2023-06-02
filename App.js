@@ -21,11 +21,16 @@ export default function App() {
   const [text, setText] = useState("");
   const [editText, setEditText] = useState("");
   const [toDos, setToDos] = useState({});
-  const [showEditBox, setShouwEditBox] = useState(false);
 
   const work = () => setWorking(true);
   const travel = () => setWorking(false);
-  const edit = () => setShouwEditBox(!showEditBox);
+
+  const edit = async (key) => {
+    const newToDos = { ...toDos };
+    newToDos[key].edit = true;
+    setToDos(newToDos);
+    await saveToDos(newToDos);
+  };
 
   const onChangeText = (payload) => setText(payload);
   const onChangeEditText = (payload) => setEditText(payload);
@@ -58,7 +63,7 @@ export default function App() {
     }
     const newToDos = {
       ...toDos,
-      [Date.now()]: { text, working, state: false },
+      [Date.now()]: { text, working, state: false, edit: false },
     };
     setToDos(newToDos);
     await saveToDos(newToDos);
@@ -157,7 +162,7 @@ export default function App() {
       newToDos[key].text = editText;
       setToDos(newToDos);
       setEditText("");
-      setShouwEditBox(!showEditBox);
+      newToDos[key].edit = false;
       await saveToDos(newToDos);
     } catch (error) {
       console.log(error);
@@ -220,7 +225,7 @@ export default function App() {
                       {toDos[key].text}
                     </Text>
                     <View style={styles.icons}>
-                      <TouchableOpacity onPress={edit}>
+                      <TouchableOpacity onPress={async () => edit(key)}>
                         <Text style={styles.icon}>
                           <FontAwesome5
                             name="edit"
@@ -257,7 +262,7 @@ export default function App() {
                       </TouchableOpacity>
                     </View>
                   </View>
-                  {showEditBox ? (
+                  {toDos[key].edit ? (
                     <TextInput
                       onSubmitEditing={async () => {
                         editToDo(key);
