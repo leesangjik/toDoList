@@ -11,7 +11,7 @@ import {
 import { theme } from "./color";
 import { useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Fontisto } from "@expo/vector-icons";
+import { FontAwesome5 } from "@expo/vector-icons";
 
 const STORAGE_KEY = "@toDos";
 const HEADER_KEY = "@header";
@@ -19,12 +19,16 @@ const HEADER_KEY = "@header";
 export default function App() {
   const [working, setWorking] = useState();
   const [text, setText] = useState("");
+  const [editText, setEditText] = useState("");
   const [toDos, setToDos] = useState({});
+  const [showEditBox, setShouwEditBox] = useState(false);
 
   const work = () => setWorking(true);
   const travel = () => setWorking(false);
+  const edit = () => setShouwEditBox(!showEditBox);
 
   const onChangeText = (payload) => setText(payload);
+  const onChangeEditText = (payload) => setEditText(payload);
 
   const saveToDos = async (toSave) => {
     try {
@@ -54,7 +58,7 @@ export default function App() {
     }
     const newToDos = {
       ...toDos,
-      [Date.now()]: { text, working },
+      [Date.now()]: { text, working, state: false },
     };
     setToDos(newToDos);
     await saveToDos(newToDos);
@@ -113,6 +117,53 @@ export default function App() {
     loadWorkingMode();
   }, []);
 
+  const completeToDo = (key) => {
+    const newToDos = { ...toDos };
+    if (newToDos[key].state == false) {
+      Alert.alert("MENTION", "Are you done?", [
+        { text: "No" },
+        {
+          text: "Yes",
+          onPress: async () => {
+            const newToDos = { ...toDos };
+            newToDos[key].state = true;
+            setToDos(newToDos);
+            await saveToDos(newToDos);
+          },
+        },
+      ]);
+    } else {
+      Alert.alert("MENTION", "Do you want to cancel the completed task?", [
+        { text: "No" },
+        {
+          text: "Yes",
+          onPress: async () => {
+            const newToDos = { ...toDos };
+            newToDos[key].state = false;
+            setToDos(newToDos);
+            await saveToDos(newToDos);
+          },
+        },
+      ]);
+    }
+  };
+
+  const editToDo = async (key) => {
+    try {
+      if (editText === "") {
+        return;
+      }
+      const newToDos = { ...toDos };
+      newToDos[key].text = editText;
+      setToDos(newToDos);
+      setEditText("");
+      setShouwEditBox(!showEditBox);
+      await saveToDos(newToDos);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar style="auto" />
@@ -158,24 +209,65 @@ export default function App() {
         {toDos
           ? Object.keys(toDos).map((key) =>
               toDos[key].working === working ? (
-                <View style={styles.toDo} key={key}>
-                  <Text style={styles.toDoText}>{toDos[key].text}</Text>
-                  <View style={styles.icons}>
-                    <TouchableOpacity>
-                      <Text style={styles.icon}>
-                        <Fontisto name="check" size={16} color={theme.grey} />
-                      </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => {
-                        deleteToDo(key);
+                <View style={styles.toDoBox} key={key}>
+                  <View style={styles.toDo}>
+                    <Text
+                      style={{
+                        ...styles.toDoText,
+                        color: toDos[key].state ? theme.grey : "white",
                       }}
                     >
-                      <Text style={styles.icon}>
-                        <Fontisto name="trash" size={16} color={theme.grey} />
-                      </Text>
-                    </TouchableOpacity>
+                      {toDos[key].text}
+                    </Text>
+                    <View style={styles.icons}>
+                      <TouchableOpacity onPress={edit}>
+                        <Text style={styles.icon}>
+                          <FontAwesome5
+                            name="edit"
+                            size={16}
+                            color={theme.icon}
+                          />
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => {
+                          completeToDo(key);
+                        }}
+                      >
+                        <Text style={styles.icon}>
+                          <FontAwesome5
+                            name={toDos[key].state ? "check-square" : "square"}
+                            size={16}
+                            color={theme.icon}
+                          />
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => {
+                          deleteToDo(key);
+                        }}
+                      >
+                        <Text style={styles.icon}>
+                          <FontAwesome5
+                            name="trash-alt"
+                            size={16}
+                            color={theme.icon}
+                          />
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
                   </View>
+                  {showEditBox ? (
+                    <TextInput
+                      onSubmitEditing={async () => {
+                        editToDo(key);
+                      }}
+                      placeholder={`Editing.. '${toDos[key].text}'`}
+                      onChangeText={onChangeEditText}
+                      returnKeyType="done"
+                      style={styles.editInput}
+                    ></TextInput>
+                  ) : null}
                 </View>
               ) : null
             )
@@ -208,6 +300,15 @@ const styles = StyleSheet.create({
     marginVertical: 20,
     fontSize: 15,
   },
+  editInput: {
+    backgroundColor: theme.editInput,
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    fontSize: 15,
+    width: "60%",
+    position: "absolute",
+  },
   toDo: {
     backgroundColor: theme.toDoBg,
     marginBottom: 10,
@@ -227,6 +328,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
   },
   icon: {
-    paddingHorizontal: 5,
+    paddingHorizontal: 6,
   },
+  toDoBox: {},
 });
