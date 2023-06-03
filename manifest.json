@@ -1,0 +1,21 @@
+{
+  "background_color": "#000000",
+  "display": "standalone",
+  "lang": "en",
+  "name": "Work Hard Travel Hard App",
+  "short_name": "Work Hard Travel Hard App",
+  "start_url": "/?utm_source=web_app_manifest",
+  "orientation": "portrait",
+  "related_applications": [
+    {
+      "platform": "itunes",
+      "id": "com.leesangjik.whthapp"
+    },
+    {
+      "platform": "play",
+      "url": "http://play.google.com/store/apps/details?id=com.leesangjik.whthapp",
+      "id": "com.leesangjik.whthapp"
+    }
+  ],
+  "prefer_related_applications": true
+}
