@@ -7,6 +7,7 @@ import {
   TextInput,
   ScrollView,
   Alert,
+  Platform,
 } from "react-native";
 import { theme } from "./color";
 import { useEffect, useState } from "react";
@@ -84,23 +85,33 @@ export default function App() {
 
   const deleteToDo = (key) => {
     try {
-      const newToDos = { ...toDos };
-      Alert.alert(
-        newToDos[key].working ? "Delete to do" : "Delete travel",
-        "Are you sure?",
-        [
-          { text: "Cancel" },
-          {
-            text: "Delete",
-            onPress: async () => {
-              const newToDos = { ...toDos };
-              delete newToDos[key];
-              setToDos(newToDos);
-              await saveToDos(newToDos);
+      if (Platform.OS === "web") {
+        const ok = confirm("Do you wnat to delete this To Do?");
+        if (ok) {
+          const newToDos = { ...toDos };
+          delete newToDos[key];
+          setToDos(newToDos);
+          saveToDos(newToDos);
+        }
+      } else {
+        const newToDos = { ...toDos };
+        Alert.alert(
+          newToDos[key].working ? "Delete to do" : "Delete travel",
+          "Are you sure?",
+          [
+            { text: "Cancel" },
+            {
+              text: "Delete",
+              onPress: async () => {
+                const newToDos = { ...toDos };
+                delete newToDos[key];
+                setToDos(newToDos);
+                await saveToDos(newToDos);
+              },
             },
-          },
-        ]
-      );
+          ]
+        );
+      }
     } catch (error) {
       console.log(error);
     }
@@ -215,7 +226,8 @@ export default function App() {
         <TouchableOpacity onPress={work}>
           <Text
             style={{
-              ...styles.btnText,
+              fontSize: 44,
+              fontWeight: 600,
               color: working ? "white" : theme.grey,
             }}
           >
@@ -225,7 +237,8 @@ export default function App() {
         <TouchableOpacity onPress={travel}>
           <Text
             style={{
-              ...styles.btnText,
+              fontSize: 44,
+              fontWeight: 600,
               color: working === false ? "white" : theme.grey,
             }}
           >
