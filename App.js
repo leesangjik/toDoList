@@ -40,7 +40,7 @@ export default function App() {
     }
   };
 
-  const onChangeText = (payload) => setText(payload);
+  const onChangeText = (event) => setText(event);
   const onChangeEditText = (payload) => setEditText(payload);
 
   const saveToDos = async (toSave) => {
@@ -66,16 +66,20 @@ export default function App() {
   });
 
   const addToDo = async () => {
-    if (text === "") {
-      return;
+    try {
+      if (text === "") {
+        return;
+      }
+      const newToDos = {
+        ...toDos,
+        [Date.now()]: { text, working, state: false, edit: false },
+      };
+      setToDos(newToDos);
+      await saveToDos(newToDos);
+      setText("");
+    } catch (error) {
+      console.log(error);
     }
-    const newToDos = {
-      ...toDos,
-      [Date.now()]: { text, working, state: false, edit: false },
-    };
-    setToDos(newToDos);
-    await saveToDos(newToDos);
-    setText("");
   };
 
   const deleteToDo = (key) => {
@@ -164,7 +168,7 @@ export default function App() {
           "MENTION",
           newToDos[key].working
             ? "Do you want to cancel the completed task?"
-            : "Should I treat it as a place I haven't been ?",
+            : "Shall I treat it as a place I haven't been ?",
           [
             { text: "No" },
             {
@@ -231,10 +235,13 @@ export default function App() {
       </View>
 
       <TextInput
-        onSubmitEditing={addToDo}
+        onSubmitEditing={() => {
+          addToDo();
+        }}
         onChangeText={onChangeText}
         returnKeyType="done"
         style={styles.input}
+        value={text}
         placeholder={
           working === undefined
             ? "Select either tap"
@@ -260,15 +267,17 @@ export default function App() {
                       {toDos[key].text}
                     </Text>
                     <View style={styles.icons}>
-                      <TouchableOpacity onPress={async () => edit(key)}>
-                        <Text style={styles.icon}>
-                          <FontAwesome5
-                            name="edit"
-                            size={16}
-                            color={theme.icon}
-                          />
-                        </Text>
-                      </TouchableOpacity>
+                      {toDos[key].state == false ? (
+                        <TouchableOpacity onPress={async () => edit(key)}>
+                          <Text style={styles.icon}>
+                            <FontAwesome5
+                              name="edit"
+                              size={16}
+                              color={theme.icon}
+                            />
+                          </Text>
+                        </TouchableOpacity>
+                      ) : null}
                       <TouchableOpacity
                         onPress={() => {
                           completeToDo(key);
@@ -303,6 +312,7 @@ export default function App() {
                         editToDo(key);
                       }}
                       placeholder={`Editing.. '${toDos[key].text}'`}
+                      value={editText}
                       onChangeText={onChangeEditText}
                       returnKeyType="done"
                       style={styles.editInput}
